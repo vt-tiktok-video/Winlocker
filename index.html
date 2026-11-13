@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>ВАС ЗАМЕТИЛИ</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;overscroll-behavior:none}
+body{position:fixed;inset:0;font-family:"Lucida Console",Consolas,"DejaVu Sans Mono","Liberation Mono","Roboto Mono",monospace;color:#eee;cursor:none;-webkit-user-select:none;user-select:none}
+#stage{position:fixed;left:0;top:0;width:100%;height:100vh;height:100dvh;overflow:hidden;background:#000}
+.scene{position:absolute;inset:0;display:none;overflow:hidden}
+.scene.active{display:block}
+.ln{white-space:pre-wrap;word-break:break-all;min-height:1.3em}
+
+/* CRT */
+#crt{position:fixed;inset:0;z-index:100;pointer-events:none;
+ animation:flick .13s steps(2) infinite}
+#crt::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%)}
+@keyframes flick{0%{opacity:.92}50%{opacity:1}100%{opacity:.96}}
+@media (prefers-reduced-motion:reduce){#crt{animation:none}}
+.glitch{animation:gl .18s steps(3) 1}
+@keyframes gl{0%{transform:translateX(-8px) skewX(3deg);filter:brightness(1.8)}
+ 40%{transform:translateX(7px) skewX(-3deg);filter:brightness(.6)}
+ 70%{transform:translateX(-3px);filter:brightness(1.4)}
+ 100%{transform:none;filter:none}}
+
+#gc{position:fixed;inset:0;width:100%;height:100%;z-index:90;pointer-events:none;display:none}
+/* 1 */
+#s1{background:#000}
+#errs{position:absolute;left:1.5vw;top:1.2vh;font-size:clamp(12px,3.7vw,18px);line-height:1.22;color:#eee;text-shadow:0 0 4px rgba(255,255,255,.35)}
+#errs.red{color:#e01010;text-shadow:0 0 5px rgba(255,0,0,.5)}
+#center{position:absolute;left:0;right:0;top:54%;transform:translateY(-50%);text-align:center}
+#eye{width:clamp(110px,34vw,200px);height:auto;opacity:0;transition:opacity 2.6s ease-in;filter:drop-shadow(0 0 6px rgba(255,255,255,.25))}
+#eye.in{opacity:1}
+#cap{font-family:"Arial Narrow","Roboto Condensed","Helvetica Neue",Arial,sans-serif;font-weight:bold;font-size:clamp(24px,8vw,44px);letter-spacing:-.02em;color:#e8e8e8;margin-top:2vh;opacity:0;transition:opacity 1.6s ease-in;transform:scaleX(.82);white-space:nowrap}
+#cap.in{opacity:1}
+#s1.hot #cap{text-shadow:0 0 14px rgba(255,0,0,.6)}
+
+/* 2 */
+#s2{background:#000}
+#bios{position:absolute;left:2vw;right:2vw;top:2vh;font-size:clamp(11px,3.3vw,16px);line-height:1.3;color:#bbb;text-shadow:0 0 3px rgba(200,200,200,.4)}
+
+/* 3 */
+#s3{background:#8f1500}
+#art{position:absolute;left:1.5vmin;top:1vmin;margin:0;font-family:"Lucida Console",Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;font-weight:bold;color:#f4ece8;white-space:pre;text-shadow:0 0 3px rgba(255,230,220,.5);line-height:1.02}
+
+/* 4 */
+#s4{background:#0000cc}
+#win{position:absolute;left:3vw;right:3vw;top:6%;color:#fff;font-size:clamp(11px,3.3vw,15px);line-height:1.35;opacity:0;transition:opacity .5s steps(3);max-width:760px;margin:0 auto}
+#win.in{opacity:1}
+#win.shake{animation:shk .35s linear 1}
+@keyframes shk{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+#wtitle{position:relative;z-index:2;background:#fff;color:#000;font-weight:bold;width:max-content;max-width:90%;margin:0 auto -9px;padding:1px 14px;text-align:center}
+.wbox{border:4px double #fff;padding:16px 9px 9px;white-space:pre-line;text-align:justify}
+.wprompt{border:4px double #fff;margin-top:12px;padding:5px 7px 9px}
+.wlabel{text-align:center;font-weight:bold;margin-bottom:5px}
+#pw{display:block;width:100%;height:30px;border:0;border-radius:0;background:#fff;color:#000;font:bold 18px "Lucida Console",Consolas,"DejaVu Sans Mono",monospace;padding:0 6px;caret-color:#000;outline:none;-webkit-user-select:text;user-select:text;cursor:text}
+.winfo{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px}
+.winfo small{color:#9aa;font-size:.78em}
+#ok{background:none;border:0;color:#fff;font:bold 1em "Lucida Console",Consolas,"DejaVu Sans Mono",monospace;padding:6px 2px;cursor:pointer}
+#status{margin-top:10px;min-height:1.4em;color:#ffec80;font-weight:bold;text-align:center}
+
+/* 5 */
+#s5{background:#000}
+#del{position:absolute;left:3vw;right:3vw;top:4vh;font-size:clamp(11px,3.3vw,16px);line-height:1.35;color:#d8d8d8}
+#del h1{margin:0 0 1.2em;font-size:1.25em;color:#e01010;animation:blk 1s steps(2) infinite}
+@keyframes blk{50%{opacity:.35}}
+.ln.ok{color:#d8d8d8}.ln.bad{color:#ff4040}
+.pwrap{margin-top:1.4em}
+.plabel{display:flex;justify-content:space-between;margin-bottom:5px}
+.pbar{height:24px;border:2px solid #d8d8d8;padding:2px}
+#pfill{height:100%;width:0;background:repeating-linear-gradient(90deg,#d8d8d8 0,#d8d8d8 8px,transparent 8px,transparent 11px)}
+
+/* 6 */
+#s6{background:#1570c0;color:#fff;font-family:"Segoe UI","Roboto","Helvetica Neue",Arial,sans-serif}
+#bs{position:absolute;left:7vw;right:7vw;top:12%;max-width:900px;margin:0 auto}
+#sad{font-size:clamp(70px,24vw,160px);line-height:1;margin-bottom:.15em;font-weight:300}
+#bs p{margin:0 0 1.1em;font-size:clamp(15px,4.6vw,26px);line-height:1.35;font-weight:300}
+#bs .small{font-size:clamp(11px,3.2vw,15px);margin:0 0 .5em;opacity:.95}
+#bs .code{font-size:clamp(11px,3.2vw,15px);font-family:Consolas,"Lucida Console","DejaVu Sans Mono",monospace;opacity:.95;word-break:break-all}
+</style>
+</head>
+<body>
+<div id="stage">
+
+ <div id="s1" class="scene">
+  <div id="errs"></div>
+  <div id="center">
+   <svg id="eye" viewBox="0 0 120 60" aria-hidden="true">
+    <defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcdcdc"/><stop offset="1" stop-color="#777"/></linearGradient></defs>
+    <path d="M4 30 Q60 -8 116 30 Q60 68 4 30Z" fill="url(#eg)" stroke="#ececec" stroke-width="3"/>
+    <circle cx="60" cy="30" r="17" fill="#f4f4f4"/>
+    <g><circle cx="60" cy="30" r="12" fill="#000"/><circle cx="60" cy="30" r="3" fill="#fff"/></g>
+   </svg>
+   <div id="cap">ВАС ЗАМЕТИЛИ</div>
+  </div>
+ </div>
+
+ <div id="s2" class="scene"><div id="bios"></div></div>
+
+ <div id="s3" class="scene"><pre id="art"></pre></div>
+
+ <div id="s4" class="scene">
+  <div id="win">
+   <div id="wtitle">Система заблокирована</div>
+   <div class="wbox" id="msg">Внимание! Доступ к вашему компьютеру закрыт. Мы давно наблюдаем за вами: за каждым вашим действием, за каждым файлом на ваших дисках. Любая попытка обойти защиту приведёт к удалению всех данных без возможности восстановления. Для разблокировки введите код. У вас есть три попытки. Вас заметили.</div>
+   <form id="f" autocomplete="off">
+    <div class="wprompt" id="prompt">
+     <div class="wlabel">Введите код разблокировки:</div>
+     <input id="pw" type="text" inputmode="numeric" maxlength="12" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Код разблокировки">
+    </div>
+    <div class="winfo" id="info"><small>Current PC: DESKTOP-VBCR13C</small><button type="submit" id="ok">Enter [Ввод]</button></div>
+   </form>
+   <div id="status">Осталось попыток: 3</div>
+  </div>
+ </div>
+
+ <div id="s5" class="scene">
+  <div id="del">
+   <h1>УДАЛЕНИЕ ДАННЫХ</h1>
+   <div id="dlines"></div>
+   <div class="pwrap">
+    <div class="plabel"><span>Прогресс удаления:</span><span id="dpct">0%</span></div>
+    <div class="pbar"><div id="pfill"></div></div>
+   </div>
+  </div>
+ </div>
+
+ <div id="s6" class="scene">
+  <div id="bs">
+   <div id="sad">:(</div>
+   <p>На вашем ПК возникла проблема, и его необходимо перезагрузить. Мы лишь собираем некоторые сведения об ошибке, а затем вы сможете... нет, не сможете.</p>
+   <p class="small">Если вы хотите получить дополнительные сведения, найдите в Интернете название ошибки позже. Нас это уже не касается.</p>
+   <p class="code">Код остановки: CRITICAL_PROCESS_DIED<br>Вас заметили. 0x000000F4 (0x0755, 0x0755, 0x0755)</p>
+  </div>
+ </div>
+
+</div>
+<canvas id="gc"></canvas>
+<div id="crt"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
+var stage=$('stage');
+
+function show(id){
+  var all=document.querySelectorAll('.scene');
+  for(var i=0;i<all.length;i++) all[i].classList.remove('active');
+  if(id) $(id).classList.add('active');
+}
+function glitch(){
+  stage.classList.remove('glitch'); void stage.offsetWidth;
+  stage.classList.add('glitch');
+  setTimeout(function(){stage.classList.remove('glitch')},220);
+}
+async function typeLine(box,text,speed,cls){
+  var d=document.createElement('div');
+  d.className='ln'+(cls?' '+cls:'');
+  box.appendChild(d);
+  for(var i=0;i<text.length;i++){ d.textContent+=text[i]; await sleep(speed); }
+  return d;
+}
+
+
+/* ---------- 0. Глитч-вставка при запуске ---------- */
+async function intro(){
+  var c=$('gc'), x=c.getContext('2d');
+  var w=c.width=Math.ceil(window.innerWidth/3), h=c.height=Math.ceil(window.innerHeight/3);
+  c.style.display='block';
+  var cols=['#fff','#f00','#0ff','#00f','#0f0','#888','#000'];
+  var end=performance.now()+1500;
+  await new Promise(function(done){
+    function fr(now){
+      if(now>=end){done();return;}
+      var k=(end-now)/1500;
+      x.fillStyle=Math.random()<.35?'#000':'rgba(0,0,0,.6)'; x.fillRect(0,0,w,h);
+      var n=Math.floor(8+Math.random()*30*k+6);
+      for(var i=0;i<n;i++){
+        x.fillStyle=cols[Math.floor(Math.random()*cols.length)];
+        var rw=Math.random()*w*(Math.random()<.3?1:.3), rh=1+Math.random()*(Math.random()<.2?14:3);
+        x.fillRect(Math.random()*w,Math.random()*h,rw,rh);
+      }
+      if(Math.random()<.5){ var sy=Math.random()*h, sh=4+Math.random()*20;
+        try{x.drawImage(c,0,sy,w,sh,(Math.random()-.5)*30,sy,w,sh);}catch(e){} }
+      if(Math.random()<.4) glitch();
+      requestAnimationFrame(fr);
+    }
+    requestAnimationFrame(fr);
+  });
+  x.clearRect(0,0,w,h); c.style.display='none';
+}
+/* ---------- 1. Глаз и ошибки ---------- */
+var ERRORS=['error: 0x09527737','error: 0x0266712','error: 0x02897593','error: 0x01447812',
+            'error: 0x0150974','error: 0x03873700','error: 0x0700882','error: 0x03803618'];
+async function scene1(){
+  show('s1');
+  await sleep(700);
+  $('eye').classList.add('in');
+  await sleep(2000);
+  $('cap').classList.add('in');
+  await sleep(2200);
+  var box=$('errs');
+  await typeLine(box,'Starting Windows . . .',45);
+  await sleep(300);
+  for(var i=0;i<ERRORS.length;i++){ await typeLine(box,ERRORS[i],24); await sleep(150); }
+  await sleep(500);
+  box.classList.add('red');
+  $('s1').classList.add('hot');
+  await sleep(3400);
+}
+
+/* ---------- 2. BIOS ---------- */
+async function scene2(){
+  glitch(); show('s2');
+  var b=$('bios'); b.textContent='';
+  var lines=[
+    'Award Modular BIOS v6.00PG',
+    'Copyright (C) 1984-2009, Award Software, Inc.',
+    '',
+    'CPU: Intel(R) Pentium(R) 4 3.00GHz',
+    'Memory Test: 2096128K OK',
+    'Detecting IDE Primary Master ... WDC WD3200AAJS',
+    'Detecting IDE Primary Slave  ... None',
+    'Keyboard: OK   Mouse: OK',
+    'Unknown device detected: observer.sys',
+    'Обнаружено постороннее присутствие.'
+  ];
+  for(var i=0;i<lines.length;i++){ await typeLine(b,lines[i],5); await sleep(60); }
+  var pl=document.createElement('div'); pl.className='ln'; pl.style.marginTop='1em'; b.appendChild(pl);
+  for(var k=0;k<=20;k++){
+    pl.textContent='Loading  ['+'#'.repeat(k)+'-'.repeat(20-k)+'] '+(k*5)+'%';
+    await sleep(65);
+  }
+  await sleep(250);
+}
+
+/* ---------- 3. Красный экран, ASCII ---------- */
+var W=48,H=34,ART=[];
+(function buildArt(){
+  var g=[],y,x;
+  for(y=0;y<H;y++){ g.push([]); for(x=0;x<W;x++) g[y].push(' '); }
+  function put(x,y,c){ if(x>=0&&x<W&&y>=0&&y<H) g[y][x]=c; }
+  function stamp(y,x,s){ for(var i=0;i<s.length;i++) if(s[i]!==' ') put(x+i,y,s[i]); }
+  for(y=0;y<H;y++){
+    for(x=0;x<W;x++){
+      var X=x*0.6, inside=false;
+      var hx=(X-7.2)/5.4, hy=(y-8.5)/8;
+      if(hx*hx+hy*hy<1) inside=true;
+      if(y>=13){ var right=9.5+(y-13)*0.22; if(X<=right) inside=true; }
+      var fx=(X-7.2)/2.7, fy=(y-10)/4.3;
+      if(fx*fx+fy*fy<1) inside=false;
+      if(y>19 && ((X*1.0+y*0.35)%3.4)<0.3) inside=false;
+      if(inside && x%2===0) put(x,y,(y%2===0)?':':'.');
+    }
+  }
+  var yy;
+  for(yy=33;yy>=7;yy--){
+    var hxp=Math.round(25+(33-yy)*0.45);
+    put(hxp,yy,'/');
+    if(yy>=10 && yy<=26 && yy%2===0) put(hxp-3,yy,'/');
+  }
+  for(yy=21;yy<=32;yy++){ put(24,yy,'#'); }
+  stamp(3,34,'ooo\\');
+  stamp(4,33,'ooooo \\');
+  stamp(5,31,'oooooooo');
+  stamp(6,33,'ooooooo');
+  stamp(7,37,'DOOOOOO');
+  stamp(8,39,'DOOOOO');
+  stamp(9,41,'DOOOO');
+  stamp(10,42,'DOOO');
+  stamp(11,42,'DOOO');
+  stamp(12,43,'DOO');
+  stamp(13,43,'DOO');
+  stamp(14,43,'DOO');
+  stamp(15,44,'OO');
+  stamp(16,43,'OO');
+  stamp(17,43,'OO');
+  stamp(18,42,'O');
+  ART=g;
+})();
+
+function fitArt(){
+  var vw=window.innerWidth, vh=window.innerHeight;
+  var fs=Math.min(vw*0.96/(W*0.6), vh*0.92/(H*1.02));
+  var a=$('art'); a.style.fontSize=fs+'px';
+  var lh=Math.max(1.02,Math.min(2.3,vh*0.88/(H*fs))); a.style.lineHeight=lh;
+}
+async function scene3(){
+  glitch(); show('s3'); fitArt();
+  var cells=[],y,x;
+  for(y=0;y<H;y++) for(x=0;x<W;x++) if(ART[y][x]!==' ') cells.push([x,y]);
+  var grid=[]; for(y=0;y<H;y++){ grid.push([]); for(x=0;x<W;x++) grid[y].push(' '); }
+  var pre=$('art'); pre.textContent='';
+  var dur=4300, t0=performance.now(), shown=0;
+  await new Promise(function(done){
+    function frame(now){
+      var p=Math.min(1,(now-t0)/dur);
+      var n=Math.floor(cells.length*p);
+      while(shown<n){ var c=cells[shown]; grid[c[1]][c[0]]=ART[c[1]][c[0]]; shown++; }
+      pre.textContent=grid.map(function(r){return r.join('')}).join('\n');
+      if(p<1) requestAnimationFrame(frame); else done();
+    }
+    requestAnimationFrame(frame);
+  });
+  await sleep(1800);
+}
+
+/* ---------- 4. Окно пароля ---------- */
+function scene4(){
+  return new Promise(function(resolve){
+    glitch(); show('s4');
+    var win=$('win'), inp=$('pw'), st=$('status'), f=$('f');
+    var tries=3, done=false;
+    setTimeout(function(){ win.classList.add('in'); },500);
+    setTimeout(function(){ try{inp.focus({preventScroll:true});}catch(e){} },1100);
+    $('s4').addEventListener('pointerdown',function(){
+      if(!done){ try{inp.focus({preventScroll:true});}catch(e){} }
+    });
+    function success(){
+      $('wtitle').textContent='Код принят';
+      $('msg').textContent='Код верный. Блокировка снята.\n\nВаши файлы не тронуты. На этот раз.\n\nНо мы продолжаем наблюдать за вами.';
+      $('f').style.display='none';
+      st.textContent='';
+    }
+    function submit(){
+      if(done) return;
+      var v=inp.value.trim();
+      if(v==='755'){ done=true; inp.blur(); success(); resolve('ok'); return; }
+      tries--; inp.value='';
+      win.classList.remove('shake'); void win.offsetWidth; win.classList.add('shake');
+      if(tries>0){
+        st.textContent='Неверный код. '+(tries===1?'Осталась 1 попытка':'Осталось попыток: '+tries);
+        try{inp.focus({preventScroll:true});}catch(e){}
+      } else {
+        done=true; inp.disabled=true; inp.blur();
+        st.textContent='Неверный код. Попыток не осталось.';
+        setTimeout(function(){resolve('fail')},1500);
+      }
+    }
+    f.addEventListener('submit',function(e){ e.preventDefault(); submit(); });
+  });
+}
+
+/* ---------- 5. Имитация удаления ---------- */
+async function scene5(){
+  glitch(); show('s5');
+  var L=$('dlines'), fill=$('pfill'), pct=$('dpct');
+  L.textContent=''; fill.style.width='0'; pct.textContent='0%';
+  var stages=[
+    [0,'Превышено число попыток ввода кода.','bad'],
+    [0,'Запуск процедуры удаления данных...',''],
+    [12,'Удаление: C:\\Users\\Пользователь\\Документы ... OK',''],
+    [27,'Удаление: C:\\Users\\Пользователь\\Изображения ... OK',''],
+    [41,'Удаление: C:\\Users\\Пользователь\\Рабочий стол ... OK',''],
+    [58,'Удаление: D:\\ ... OK',''],
+    [76,'Удаление: C:\\Windows\\System32 ... OK',''],
+    [91,'Уничтожение загрузочного сектора ... OK',''],
+    [100,'Удаление завершено. Восстановление невозможно.','bad']
+  ];
+  var cur=0;
+  for(var i=0;i<stages.length;i++){
+    await typeLine(L,stages[i][1],14,stages[i][2]);
+    var target=stages[i][0];
+    while(cur<target){
+      cur++;
+      fill.style.width=cur+'%'; pct.textContent=cur+'%';
+      var d=25+Math.random()*60;
+      if(Math.random()<0.05) d+=350;
+      await sleep(d);
+    }
+    await sleep(200);
+  }
+  await sleep(1100);
+}
+
+/* ---------- 6. BSOD ---------- */
+async function scene6(){
+  show(null);
+  await sleep(900);
+  glitch(); show('s6');
+}
+
+window.addEventListener('resize',function(){ if($('s3').classList.contains('active')) fitArt(); });
+document.addEventListener('contextmenu',function(e){e.preventDefault()});
+
+(async function main(){
+  show(null);
+  await intro();
+  await scene1();
+  await scene2();
+  await scene3();
+  var r=await scene4();
+  if(r==='ok') return;
+  await scene5();
+  await scene6();
+})();
+})();
+</script>
+</body>
+</html>
